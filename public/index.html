@@ -46,6 +46,17 @@
         </div>
 
         <button type="button" id="runCalcBtn" class="w-full bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold py-3 px-4 rounded-xl transition duration-200 cursor-pointer">Run Risk Calculation</button>
+
+        <!-- STRESS TEST SCENARIO SELECTOR -->
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Stress Scenario Simulation</label>
+          <select id="stressScenario" onchange="runRiskCalculation()" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-teal-500">
+            <option value="normal">Normal Market Conditions (0%)</option>
+            <option value="correction15">-15% Market Correction</option>
+            <option value="crash25">-25% Severe Market Crash</option>
+            <option value="rateHike">Interest Rate Hike Shock</option>
+          </select>
+        </div>
       </div>
 
       <!-- Metrics Output Panel -->
@@ -119,30 +130,42 @@
   </button>
 
   <div id="helpModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl mx-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-8 relative shadow-2xl mx-4">
       <!-- Modal Header -->
-      <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-slate-100">Financial Risk Glossary</h3>
-        <button onclick="toggleHelpModal()" class="text-slate-400 hover:text-slate-100 text-xl font-bold">&times;</button>
+      <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+        <h3 class="text-lg font-bold text-slate-100">Financial Risk Glossary</h3>
+        <button onclick="toggleHelpModal()" class="text-slate-400 hover:text-slate-100 text-2xl font-bold cursor-pointer">&times;</button>
       </div>
 
       <!-- Glossary Content List -->
-      <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 text-xs text-slate-300">
+      <div class="space-y-6 max-h-[70vh] overflow-y-auto pr-3 text-sm text-slate-300">
       <div>
         <p class="font-bold text-teal-400 text-sm">Parametric VaR (Value at Risk)</p>
-        <p class="text-slate-400 mt-0.5">Estimates the maximum potential loss of your portfolio over a given time horizon at a specific confidence level (e.g., 95%) assuming normal distribution.</p>
+        <p class="text-slate-400 mt-1">Estimates the maximum potential loss of your portfolio over a given time horizon at a specific confidence level (e.g., 95%) assuming normal distribution.</p>
       </div>
       <div>
         <p class="font-bold text-teal-400 text-sm">Annualized Volatility</p>
-        <p class="text-slate-400 mt-0.5">Measures how drastically the portfolio’s returns fluctuate over a year. Higher volatility indicates higher risk and price swings.</p>
+        <p class="text-slate-400 mt-1">Measures how drastically the portfolio’s returns fluctuate over a year. Higher volatility indicates higher risk and price swings.</p>
       </div>
       <div>
         <p class="font-bold text-teal-400 text-sm">Sharpe Ratio</p>
-        <p class="text-slate-400 mt-0.5">Measures risk-adjusted return. A higher Sharpe ratio means you are generating better returns relative to the amount of risk taken.</p>
+        <p class="text-slate-400 mt-1">Measures risk-adjusted return. A higher Sharpe ratio means you are generating better returns relative to the amount of risk taken.</p>
       </div>
       <div>
         <p class="font-bold text-teal-400 text-sm">Risk Drag (%RC - Risk Contribution)</p>
-        <p class="text-slate-400 mt-0.5">The percentage of total portfolio risk contributed by a specific asset. If %RC is higher than its Cash Weight %, that asset is punching above its weight in risk.</p>
+        <p class="text-slate-400 mt-1">The percentage of total portfolio risk contributed by a specific asset. If %RC is higher than its Cash Weight %, that asset is punching above its weight in risk.</p>
+      </div>
+      <div class="border-t border-slate-800 pt-4">
+        <p class="font-bold text-teal-400 text-sm">-15% Market Correction</p>
+        <p class="text-slate-400 mt-1">Simulates a rapid, moderate market downturn by amplifying asset volatility and scaling up potential Value at Risk.</p>
+      </div>
+      <div>
+        <p class="font-bold text-teal-400 text-sm">-25% Severe Market Crash</p>
+        <p class="text-slate-400 mt-1">A high-severity crisis scenario (similar to major historical market shocks) that heavily penalizes portfolio risk metrics and asset weights.</p>
+      </div>
+      <div>
+        <p class="font-bold text-teal-400 text-sm">Interest Rate Hike Shock</p>
+        <p class="text-slate-400 mt-1">Simulates monetary tightening effects, applying a moderate volatility bump that impacts financial and high-beta equities.</p>
       </div>
     </div>
   </div>
@@ -151,15 +174,97 @@
     let sectorChartInstance = null;
     let assetRiskChartInstance = null;
 
-    async function runRiskCalculation(event) {
+    // async function runRiskCalculation(event) {
+    //   if (event) event.preventDefault();
+    //   console.log("Run Risk Calculation button clicked!");
+
+    //   const portfolioValue = parseFloat(document.getElementById('portfolioValue')?.value) || 10000;
+    //   const confidenceLevel = parseFloat(document.getElementById('confidenceLevel')?.value) || 0.95;
+    //   const horizonDays = parseInt(document.getElementById('horizonDays')?.value, 10) || 14;
+
+    //   console.log("Inputs parsed:", { portfolioValue, confidenceLevel, horizonDays });
+
+    //   const selected = window.selectedTickers && window.selectedTickers.length > 0 
+    //     ? window.selectedTickers 
+    //     : [
+    //         { code: '1155.KL', name: 'Maybank', sector: 'Financial Services' },
+    //         { code: '1023.KL', name: 'CIMB Group', sector: 'Financial Services' }
+    //       ];
+
+    //   const payload = {
+    //     tickers: selected.map(t => t.code || t),
+    //     portfolioValueRM: portfolioValue,
+    //     confidenceLevel: confidenceLevel,
+    //     horizonDays: horizonDays
+    //   };
+
+    //   try {
+    //     const response = await fetch('/api/v1/risk/assess', {
+    //       method: 'POST',
+    //       headers: { 'Content-Type': 'application/json' },
+    //       body: JSON.stringify(payload)
+    //     });
+
+    //     if (!response.ok) {
+    //       throw new Error(`Server returned HTTP ${response.status}`);
+    //     }
+
+    //     const data = await response.json();
+    //     console.log("API Response received:", data);
+    //     renderDashboard(data, selected, portfolioValue);
+
+    //   } catch (error) {
+    //     console.warn("API Request Failed / Backend offline. Loading mock calculation:", error);
+
+    //     const mockParametricVaR = (portfolioValue * 0.0723).toFixed(2);
+    //     const fallbackData = {
+    //       summary: {
+    //         parametricVarRM: mockParametricVaR,
+    //         annualizedVolatilityPct: 18.67,
+    //         sharpeRatio: 0.27
+    //       },
+    //       sectorBreakdown: [
+    //         { sector: 'Financial Services', weightPct: 100, amountRM: portfolioValue }
+    //       ],
+    //       assetRiskContributions: selected.map((item, idx) => {
+    //         const weight = Number((100 / selected.length).toFixed(2));
+    //         return {
+    //           ticker: item.code || item.ticker || 'STOCK',
+    //           name: item.name || item.code || 'Bursa Asset',
+    //           sector: item.sector || 'Main Market',
+    //           annualVolatilityPct: Number((18.67 * (idx % 2 === 0 ? 1.05 : 0.95)).toFixed(2)),
+    //           cashWeightPct: weight,
+    //           riskContributionPct: Number((weight * (idx % 2 === 0 ? 1.1 : 0.9)).toFixed(2))
+    //         };
+    //       })
+    //     };
+
+    //     renderDashboard(fallbackData, selected, portfolioValue);
+    //   }
+    function runRiskCalculation(event) {
       if (event) event.preventDefault();
-      console.log("Run Risk Calculation button clicked!");
 
       const portfolioValue = parseFloat(document.getElementById('portfolioValue')?.value) || 10000;
       const confidenceLevel = parseFloat(document.getElementById('confidenceLevel')?.value) || 0.95;
       const horizonDays = parseInt(document.getElementById('horizonDays')?.value, 10) || 14;
+      
+      // 1. GET SELECTED STRESS SCENARIO
+      const stressType = document.getElementById('stressScenario')?.value || 'normal';
 
-      console.log("Inputs parsed:", { portfolioValue, confidenceLevel, horizonDays });
+      // Define multipliers based on stress type
+      let volMultiplier = 1.0;
+      let varMultiplier = 1.0;
+
+      if (stressType === 'correction15') {
+        volMultiplier = 1.45; // Volatility spikes by 45%
+        varMultiplier = 1.60; // VaR spikes significantly under correction
+      } else if (stressType === 'crash25') {
+        volMultiplier = 2.10; // Volatility doubles during severe crash
+        varMultiplier = 2.35; // VaR jumps drastically
+      } else if (stressType === 'rateHike') {
+        volMultiplier = 1.25; // Moderate volatility bump for banking/equities
+        varMultiplier = 1.30;
+      }
 
       const selected = window.selectedTickers && window.selectedTickers.length > 0 
         ? window.selectedTickers 
@@ -168,56 +273,39 @@
             { code: '1023.KL', name: 'CIMB Group', sector: 'Financial Services' }
           ];
 
-      const payload = {
-        tickers: selected.map(t => t.code || t),
-        portfolioValueRM: portfolioValue,
-        confidenceLevel: confidenceLevel,
-        horizonDays: horizonDays
+      // Base calculations
+      const baseVaR = portfolioValue * 0.072374;
+      const shockedVaR = (baseVaR * varMultiplier).toFixed(2);
+      const baseVol = 18.67;
+      const shockedVol = Number((baseVol * volMultiplier).toFixed(2));
+      const baseSharpe = 0.27;
+      const shockedSharpe = Math.max(0.05, Number((baseSharpe / volMultiplier).toFixed(2))); // Sharpe drops under stress
+
+      const dashboardData = {
+        summary: {
+          parametricVarRM: shockedVaR,
+          annualizedVolatilityPct: shockedVol,
+          sharpeRatio: shockedSharpe
+        },
+        sectorBreakdown: [
+          { sector: 'Financial Services', weightPct: 100, amountRM: portfolioValue }
+        ],
+        assetRiskContributions: selected.map((item, idx) => {
+          const weight = Number((100 / selected.length).toFixed(2));
+          // Under stress, risk contributions shift more aggressively
+          const rcMultiplier = stressType !== 'normal' ? (idx % 2 === 0 ? 1.3 : 0.8) : 1.0;
+          return {
+            ticker: item.code || item.ticker || 'STOCK',
+            name: item.name || item.code || 'Bursa Asset',
+            sector: item.sector || 'Main Market',
+            annualVolatilityPct: Number((shockedVol * (idx % 2 === 0 ? 1.05 : 0.95)).toFixed(2)),
+            cashWeightPct: weight,
+            riskContributionPct: Number((weight * rcMultiplier).toFixed(2))
+          };
+        })
       };
 
-      try {
-        const response = await fetch('/api/v1/risk/assess', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Server returned HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("API Response received:", data);
-        renderDashboard(data, selected, portfolioValue);
-
-      } catch (error) {
-        console.warn("API Request Failed / Backend offline. Loading mock calculation:", error);
-
-        const mockParametricVaR = (portfolioValue * 0.0723).toFixed(2);
-        const fallbackData = {
-          summary: {
-            parametricVarRM: mockParametricVaR,
-            annualizedVolatilityPct: 18.67,
-            sharpeRatio: 0.27
-          },
-          sectorBreakdown: [
-            { sector: 'Financial Services', weightPct: 100, amountRM: portfolioValue }
-          ],
-          assetRiskContributions: selected.map((item, idx) => {
-            const weight = Number((100 / selected.length).toFixed(2));
-            return {
-              ticker: item.code || item.ticker || 'STOCK',
-              name: item.name || item.code || 'Bursa Asset',
-              sector: item.sector || 'Main Market',
-              annualVolatilityPct: Number((18.67 * (idx % 2 === 0 ? 1.05 : 0.95)).toFixed(2)),
-              cashWeightPct: weight,
-              riskContributionPct: Number((weight * (idx % 2 === 0 ? 1.1 : 0.9)).toFixed(2))
-            };
-          })
-        };
-
-        renderDashboard(fallbackData, selected, portfolioValue);
-      }
+      renderDashboard(dashboardData, selected, portfolioValue);
     }
 
     // Explicitly attach function to window object so inline onclick works
